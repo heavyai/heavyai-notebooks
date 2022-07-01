@@ -11,34 +11,52 @@ concurrency:
 
 jobs:
   eval-notebooks:
-      runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
 
-      steps:
-        - uses: actions/checkout@v3
+    steps:
+      - uses: actions/checkout@v3
 
-        - uses: conda-incubator/setup-miniconda@v2
-          with:
-            python-version: 3.9
-            mamba-version: "*"
-            channels: conda-forge
-            environment-file: environment.yml
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: 3.9
+          mamba-version: "*"
+          channels: conda-forge
+          environment-file: environment.yml
+          activate-environment: heavyai-env
 
-        - name: Install additional packages
-          run: |
-            mamba install -c conda-forge heavydb nbval pytest
+      - name: Cache conda
+        uses: actions/cache@v3
+        env:
+          # Increase this value to reset cache if environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ${{ env.CONDA }}/envs/heavyai-env
+          key:
+            conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+        id: cache
 
-        - name: Start heavydb server
-          run: |
-            mkdir storage
-            initheavy storage -f
-            heavydb --version
-            RUN_FLAGS="--enable-runtime-udfs --enable-table-functions --enable-dev-table-functions --enable-udf-registration-for-all-users"
-            echo ${RUN_FLAGS}
-            heavydb $RUN_FLAGS &> heavydb-output.txt &
-            sleep 10
+      - name: Update Conda Environment
+        run: mamba env update -n heavyai-env -f environment.yml
 
-        - name: Execute pytest
-          run: |
-            pytest -v -rs --nbval ./ -x
-            killall heavydb
-            cat heavydb-output.txt
+      - name: Install additional packages
+        run: |
+          mamba install -c conda-forge heavydb nbval pytest
+
+      - name: Start heavydb server
+        run: |
+          mkdir storage
+          initheavy storage -f
+          heavydb --version
+          RUN_FLAGS="--enable-runtime-udfs --enable-table-functions --enable-dev-table-functions --enable-udf-registration-for-all-users"
+          echo ${RUN_FLAGS}
+          heavydb $RUN_FLAGS &> heavydb-output.txt &
+          sleep 10
+
+      - name: Execute pytest
+        run: |
+          pytest -v -rs --nbval ./ -x
+          killall heavydb
+          cat heavydb-output.txt
