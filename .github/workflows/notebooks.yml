@@ -1,0 +1,44 @@
+name: Notebooks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  eval-notebooks:
+      runs-on: ubuntu-latest
+
+      steps:
+        - uses: actions/checkout@v3
+
+        - uses: conda-incubator/setup-miniconda@v2
+          with:
+            python-version: 3.9
+            mamba-version: "*"
+            channels: conda-forge
+            environment-file: environment.yml
+
+        - name: Install additional packages
+          run: |
+            mamba install -c conda-forge heavydb nbval pytest
+
+        - name: Start heavydb server
+          run: |
+            mkdir storage
+            initheavy storage -f
+            heavydb --version
+            RUN_FLAGS="--enable-runtime-udfs --enable-table-functions --enable-dev-table-functions --enable-udf-registration-for-all-users"
+            echo ${RUN_FLAGS}
+            heavydb $RUN_FLAGS &> heavydb-output.txt &
+            sleep 10
+
+        - name: Execute pytest
+          run: |
+            pytest -v -rs --nbval ./ -x
+            killall heavydb
+            cat heavydb-output.txt
