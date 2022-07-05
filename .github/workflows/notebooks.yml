@@ -53,6 +53,6 @@ jobs:
 
       - name: Execute pytest
         run: |
-          pytest -v -rs --nbval ./
+          pytest -v -rs --nbval-lax ./
           killall heavydb
           cat heavydb-output.txt
