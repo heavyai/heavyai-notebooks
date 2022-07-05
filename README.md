@@ -18,6 +18,7 @@ conda env create -f environment.yml
 conda activate heavyai-env
 
 # if you need to run heavydb locally
+conda install heavydb  # only linux and windows, use docker on macOS
 mkdir -p data
 initheavy data -f
 heavydb --enable-runtime-udfs --enable-table-functions
