@@ -29,9 +29,9 @@ jobs:
         id: conda_cache
         env:
           # Increase this value to reset cache if environment.yml has not changed
-          CACHE_NUMBER: 0
+          CACHE_NUMBER: 1
         with:
-          path: ~/conda_pkgs_dir
+          path: ${{ env.CONDA }}/envs/heavyai-env
           key:
             conda-${{ env.CACHE_NUMBER }}-${{ steps.get-date.outputs.thisweek }}-${{ hashFiles('environment.yml') }}
 
