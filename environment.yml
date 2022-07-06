@@ -7,6 +7,7 @@ dependencies:
   - heavyai
   - rbc
   - pandas
+  - s3fs
   - geopandas
   - contextily
   - jupyterlab
