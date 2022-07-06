@@ -19,26 +19,38 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Get Date
+        id: get-date
+        run: echo "::set-output name=thisweek::$(/bin/date -u '+%Y%W')"
+        shell: bash
+
       - name: Cache conda
         uses: actions/cache@v3
+        id: conda_cache
         env:
           # Increase this value to reset cache if environment.yml has not changed
           CACHE_NUMBER: 0
         with:
           path: ~/conda_pkgs_dir
           key:
-            conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+            conda-${{ env.CACHE_NUMBER }}-${{ steps.get-date.outputs.thisweek }}-${{ hashFiles('environment.yml') }}
 
-      - uses: conda-incubator/setup-miniconda@v2
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: 3.9
-          mamba-version: "*"
           channels: conda-forge
-          environment-file: environment.yml
+          channel-priority: true
           activate-environment: heavyai-env
+          use-only-tar-bz2: true
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          use-mamba: true
 
-      - name: Install additional packages
+      - name: Update Conda Environment and install additional packages
+        if: steps.conda_cache.outputs.cache-hit != 'true'
         run: |
+          mamba env update -n heavyai-env -f environment.yml
           mamba install -c conda-forge heavydb nbval pytest
 
       - name: Start heavydb server
