@@ -1,13 +1,13 @@
 # mamba env create -f environment.yml
 name: heavyai-env
 channels:
-  - defaults
   - conda-forge
 dependencies:
   - python
   - heavyai
   - rbc
   - pandas
+  - s3fs
   - geopandas
   - contextily
   - jupyterlab
